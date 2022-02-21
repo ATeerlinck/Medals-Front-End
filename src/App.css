@@ -1,0 +1,32 @@
+body {
+  background-color: #3bb7ff;
+}
+
+header {
+  width: 100%;
+  background-color: #3bffeb9c;
+}
+
+.App {
+  text-align: center;
+  height: 100%;
+}
+
+#root {
+  height: 100%;
+}
+
+.App-header {
+opacity: .8;
+font-size: 3em;
+padding: 1em;
+}
+
+.Country {
+  opacity: .75;
+  background-color: #ffffff;
+  margin: 1em;
+  padding: 1em;
+  text-align: center;
+  display: flex;
+}
