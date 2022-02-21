@@ -32,35 +32,28 @@ const App = () => {
       }
     }
   }
-  const handleIncrement = (countryId, type) =>{
-    const countryIndex = countries.findIndex(c => c.id === countryId);
-    console.log("hey");
-    console.log(countryIndex);
-    let mutableCountries = countries.map((country, index) => {
-      console.log(`country: ${country}, index: ${index}`);
-      if(countryIndex === index){
-        const newCountry = country; newCountry[type]+=1; 
-        return newCountry;
-      } else{
-        return country;
-      }
-    } );
+  const handleIncrement = (countryId, medalName) => handleUpdate(countryId, medalName, 1);
+  const handleDecrement = (countryId, medalName) =>  handleUpdate(countryId, medalName, -1)
+  const handleUpdate = async (countryId, medalName, factor) => {
+    const originalCountries = countries;
+    const idx = countries.findIndex(c => c.id === countryId);
+    const mutableCountries = [...countries ];
+    mutableCountries[idx][medalName] += (1 * factor);
     setCountries(mutableCountries);
-  }
-  const handleDecrement = (countryId, type) =>{
-    const countryIndex = countries.findIndex(c => c.id === countryId);
-    console.log("hey");
-    console.log(countryIndex);
-    let mutableCountries = countries.map((country, index) => {
-      console.log(`country: ${country}, index: ${index}`);
-      if(countryIndex === index){
-        const newCountry = country; newCountry[type]-=1; 
-        return newCountry;
-      } else{
-        return country;
+    const jsonPatch = [{ op: "replace", path: medalName, value: mutableCountries[idx][medalName] }];
+    console.log(`json patch for id: ${countryId}: ${JSON.stringify(jsonPatch)}`);
+
+    try {
+      await axios.patch(`${apiEndpoint}/${countryId}`, jsonPatch);
+    } catch (ex) {
+      if (ex.response && ex.response.status === 404) {
+        // country already deleted
+        console.log("The record does not exist - it may have already been deleted");
+      } else { 
+        alert('An error occurred while updating');
+        setCountries(originalCountries);
       }
-    } );
-    setCountries(mutableCountries);
+    }
   }
   const getMedalCount = (medal) =>{
     let count = 0;
