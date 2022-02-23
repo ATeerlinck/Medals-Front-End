@@ -30,3 +30,8 @@ padding: 1em;
   text-align: center;
   display: flex;
 }
+
+.delta {
+  color: red;
+  font-style: italic;
+}
