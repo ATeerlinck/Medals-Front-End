@@ -11,15 +11,14 @@ import Container from '@mui/material/Container';
 import { HubConnectionBuilder } from '@microsoft/signalr';
 
 const App = () => {
-  const apiEndpoint = "https://localhost:5001/api/country";
   const hubEndpoint = "https://localhost:5001/medalsHub"
-  // const apiEndpoint = "https://medalsapi.azurewebsites.net/api/country";
+  const apiEndpoint = "https://medalsapi.azurewebsites.net/api/country";
   // const hubEndpoint = "https://medalsapi.azurewebsites.net/medalsHub"
   const [ countries, setCountries ] = useState([]);
   const [ connection, setConnection] = useState(null);
 
   const handleAdd = async (country) => {
-    await axios.post(apiEndpoint, { name: name });
+    await axios.post(apiEndpoint, { name: country });
   }
   const handleDelete = async (countryId) => {
     const OGcountries = countries;
