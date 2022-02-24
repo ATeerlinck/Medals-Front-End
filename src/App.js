@@ -8,14 +8,18 @@ import NewCountryNoMui from './components/NewCountryNoMui';
 import Avatar from '@mui/material/Avatar';
 import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
+import { HubConnectionBuilder } from '@microsoft/signalr';
 
 const App = () => {
-  const [countries, setCountries] = useState([]);
-  const apiEndpoint = "https://medals-api.azurewebsites.net/api/country";
+  const apiEndpoint = "https://localhost:5001/api/country";
+  const hubEndpoint = "https://localhost:5001/medalsHub"
+  // const apiEndpoint = "https://medalsapi.azurewebsites.net/api/country";
+  // const hubEndpoint = "https://medalsapi.azurewebsites.net/medalsHub"
+  const [ countries, setCountries ] = useState([]);
+  const [ connection, setConnection] = useState(null);
 
   const handleAdd = async (country) => {
-    const { data: post } = await axios.post(apiEndpoint, { name: country});
-    setCountries(countries.concat(post));
+    await axios.post(apiEndpoint, { name: name });
   }
   const handleDelete = async (countryId) => {
     const OGcountries = countries;
@@ -62,6 +66,10 @@ const App = () => {
     }
     return count;
   }
+  const latestCountries = useRef(null);
+  // latestCountries.current is a ref variable to countries
+  // this is needed to access state variable in useEffect w/o dependency
+  latestCountries.current = countries;
   useEffect(() => {
     // initial data loaded here
     async function fetchData() {
@@ -69,7 +77,48 @@ const App = () => {
       setCountries(fetchedCountries);
     }
     fetchData();
+    // signalR
+    const newConnection = new HubConnectionBuilder()
+      .withUrl(hubEndpoint)
+      .withAutomaticReconnect()
+      .build();
+
+    setConnection(newConnection);
   }, []);
+  // componentDidUpdate (changes to connection)
+  useEffect(() => {
+    if (connection) {
+      connection.start()
+      .then(() => {
+        console.log('Connected!')
+
+        connection.on('ReceiveAddMessage', country => {
+          console.log(`Add: ${country.name}`);
+          let mutableCountries = [...latestCountries.current];
+          mutableCountries = mutableCountries.concat(country);
+
+          setCountries(mutableCountries);
+        });
+        connection.on('ReceiveDeleteMessage', id => {
+          console.log(`Delete id: ${id}`);
+          let mutableCountries = [...latestCountries.current];
+          mutableCountries = mutableCountries.filter(c => c.id !== id);
+
+          setCountries(mutableCountries);
+        });
+        connection.on('ReceivePatchMessage', country => {
+          console.log(`Patch: ${country.name}`);
+          let mutableCountries = [...latestCountries.current];
+          const idx = mutableCountries.findIndex(c => c.id === country.id);
+          mutableCountries[idx] = country;
+
+          setCountries(mutableCountries);
+        });
+      })
+      .catch(e => console.log('Connection failed: ', e));
+    }
+  // useEffect is dependent on changes connection
+  }, [connection]);
 
   return ( 
     <div className="App">
