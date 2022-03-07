@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import axios from 'axios';
 import Country from './components/Country';
@@ -11,14 +11,25 @@ import Container from '@mui/material/Container';
 import { HubConnectionBuilder } from '@microsoft/signalr';
 
 const App = () => {
-  const hubEndpoint = "https://localhost:5001/medalsHub"
-  const apiEndpoint = "https://medalsapi.azurewebsites.net/api/country";
-  // const hubEndpoint = "https://medalsapi.azurewebsites.net/medalsHub"
+  // const apiEndpoint = "https://localhost:5001/api/country";
+  // const hubEndpoint = "https://localhost:5001/medalsHub"
+  const apiEndpoint = "https://medals-api.azurewebsites.net/jwt/api/country";
+  const hubEndpoint = "https://medals-api.azurewebsites.net/medalsHub"
   const [ countries, setCountries ] = useState([]);
   const [ connection, setConnection] = useState(null);
 
   const handleAdd = async (country) => {
-    await axios.post(apiEndpoint, { name: country });
+    try {
+      await axios.post(apiEndpoint, { name: name });
+    } catch (ex) {
+      if (ex.response && ex.response.status === 401) {
+        alert("You are not authorized to complete this request");
+      } else if (ex.response) {
+        console.log(ex.response);
+      } else {
+        console.log("Request failed");
+      }
+    }
   }
   const handleDelete = async (countryId) => {
     const OGcountries = countries;
@@ -30,11 +41,18 @@ const App = () => {
         // country already deleted
         console.log("The record does not exist - it may have already been deleted");
       } else { 
-        alert('An error occurred while deleting a country');
         setCountries(OGcountries);
+        if (ex.response && ex.response.status === 401) {
+          alert("You are not authorized to complete this request");
+        } else if (ex.response) {
+          console.log(ex.response);
+        } else {
+          console.log("Request failed");
+        }
       }
     }
   }
+
   const handleIncrement = (countryId, medalName) => handleUpdate(countryId, medalName, 1);
   const handleDecrement = (countryId, medalName) =>  handleUpdate(countryId, medalName, -1)
   const handleUpdate = async (countryId, medalName, factor) => {
@@ -58,6 +76,7 @@ const App = () => {
       }
     }
   }
+
   const getMedalCount = (medal) =>{
     let count = 0;
     for(let i=0; i<countries.length; i++){
@@ -84,6 +103,7 @@ const App = () => {
 
     setConnection(newConnection);
   }, []);
+
   // componentDidUpdate (changes to connection)
   useEffect(() => {
     if (connection) {
