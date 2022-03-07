@@ -8,41 +8,43 @@ import NewCountryNoMui from './components/NewCountryNoMui';
 import Avatar from '@mui/material/Avatar';
 import Grid from '@mui/material/Grid';
 import Container from '@mui/material/Container';
-import { HubConnectionBuilder } from '@microsoft/signalr';
+import { HubConnectionBuilder } from '@microsoft/signalr';import { BrowserRouter as Router, Route, Link } from 'react-router-dom'
+import jwtDecode from 'jwt-decode';
+import Login from './components/Login';
 
 const App = () => {
   // const apiEndpoint = "https://localhost:5001/api/country";
   // const hubEndpoint = "https://localhost:5001/medalsHub"
   const apiEndpoint = "https://medals-api.azurewebsites.net/jwt/api/country";
   const hubEndpoint = "https://medals-api.azurewebsites.net/medalsHub"
+  const usersEndpoint = "https://medals-roles-api.azurewebsites.net/api/users/login";
   const [ countries, setCountries ] = useState([]);
   const [ connection, setConnection] = useState(null);
+  const [ user, setUser ] = useState(
+    {
+      name: null,
+      canPost: false,
+      canPatch: false,
+      canDelete: false
+    }
+  );
 
   const handleAdd = async (country) => {
-    try {
-      await axios.post(apiEndpoint, { name: name });
-    } catch (ex) {
-      if (ex.response && ex.response.status === 401) {
-        alert("You are not authorized to complete this request");
-      } else if (ex.response) {
-        console.log(ex.response);
-      } else {
-        console.log("Request failed");
-      }
-    }
-  }
-  const handleDelete = async (countryId) => {
-    const OGcountries = countries;
-    setCountries(countries.filter(c => c.id !== countryId));
-    try {
-      await axios.delete(`${apiEndpoint}/${countryId}`);
-    } catch(ex) {
-      if (ex.response && ex.response.status === 404) {
-        // country already deleted
-        console.log("The record does not exist - it may have already been deleted");
-      } else { 
-        setCountries(OGcountries);
+    // check for valid token based on token exp
+    if (isValidToken())
+    {
+      console.log('valid');
+      try {
+        await axios.post(jwtApiEndPoint, {
+          name: country
+        }, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+      } catch (ex) {
         if (ex.response && ex.response.status === 401) {
+          // perhaps token has expired
           alert("You are not authorized to complete this request");
         } else if (ex.response) {
           console.log(ex.response);
@@ -50,30 +52,155 @@ const App = () => {
           console.log("Request failed");
         }
       }
+    } else {
+      alert('Your token has expired');
+    }
+  }
+  const handleDelete = async (countryId) => {
+    // check for valid token based on token exp
+    if (isValidToken())
+    {
+      const originalCountries = countries;
+      setCountries(countries.filter(c => c.id !== countryId));
+      try {
+        await axios.delete(`${jwtApiEndPoint}/${countryId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+      } catch (ex) {
+        if (ex.response && ex.response.status === 404) {
+          // country already deleted
+          console.log("The record does not exist - it may have already been deleted");
+        } else { 
+          setCountries(originalCountries);
+          if (ex.response && ex.response.status === 401) {
+            // perhaps token has expired
+            alert("You are not authorized to complete this request");
+          } else if (ex.response) {
+            console.log(ex.response);
+          } else {
+            console.log("Request failed");
+          }
+        }
+      }
+    } else {
+      alert('Your token has expired');
     }
   }
 
   const handleIncrement = (countryId, medalName) => handleUpdate(countryId, medalName, 1);
   const handleDecrement = (countryId, medalName) =>  handleUpdate(countryId, medalName, -1)
   const handleUpdate = async (countryId, medalName, factor) => {
-    const originalCountries = countries;
-    const idx = countries.findIndex(c => c.id === countryId);
-    const mutableCountries = [...countries ];
-    mutableCountries[idx][medalName] += (1 * factor);
-    setCountries(mutableCountries);
-    const jsonPatch = [{ op: "replace", path: medalName, value: mutableCountries[idx][medalName] }];
-    console.log(`json patch for id: ${countryId}: ${JSON.stringify(jsonPatch)}`);
+    // check for valid token based on token exp
+    if (isValidToken())
+    {
+      const idx = countries.findIndex(c => c.id === countryId);
+      const mutableCountries = [...countries ];
+      const originalCount = mutableCountries[idx][medalName];
+      mutableCountries[idx][medalName] += (1 * factor);
+      setCountries(mutableCountries);
+      const jsonPatch = [{ op: "replace", path: medalName, value: mutableCountries[idx][medalName] }];
+      console.log(`json patch for id: ${countryId}: ${JSON.stringify(jsonPatch)}`);
 
-    try {
-      await axios.patch(`${apiEndpoint}/${countryId}`, jsonPatch);
-    } catch (ex) {
-      if (ex.response && ex.response.status === 404) {
-        // country already deleted
-        console.log("The record does not exist - it may have already been deleted");
-      } else { 
-        alert('An error occurred while updating');
-        setCountries(originalCountries);
+      try {
+        await axios.patch(`${jwtApiEndPoint}/${countryId}`, jsonPatch, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+      } catch (ex) {
+        if (ex.response && ex.response.status === 404) {
+          // country does not exist
+          console.log("The record does not exist - it may have been deleted");
+        } else if (ex.response && ex.response.status === 401) { 
+          // perhaps token has expired
+          alert('You are not authorized to complete this request');
+          const revertCountries = [...countries];
+          revertCountries[idx][medalName] = originalCount;
+          setCountries(revertCountries);
+        } else if (ex.response) {
+          console.log(ex.response);
+        } else {
+          console.log("Request failed");
+        }
       }
+    } else {
+      alert('Your token has expired');
+    }
+  }
+  const handleLogin = async (username, password) => {
+    try {
+      const resp = await axios.post(usersEndpoint, { username: username, password: password });
+      // save token to local storage
+      const encodedJwt = resp.data.token;
+      localStorage.setItem('token', encodedJwt);
+      setUser(getUser(encodedJwt));
+    } catch (ex) {
+      if (ex.response && (ex.response.status === 401 || ex.response.status === 400 )) {
+        alert("Login failed");
+      } else if (ex.response) {
+        console.log(ex.response);
+      } else {
+        console.log("Request failed");
+      }
+    }
+  }
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    console.log('logout');
+    localStorage.removeItem('token');
+    setUser({
+      name: null,
+      canPost: false,
+      canPatch: false,
+      canDelete: false
+    });
+    return false;
+  }
+  const isValidToken = () => {
+    const encodedJwt = localStorage.getItem("token");
+    // check for existing token
+    if (encodedJwt) {
+      const decodedJwt = jwtDecode(encodedJwt);
+      const diff = Date.now() - (decodedJwt['exp'] * 1000);
+      if (diff < 0) {
+        console.log(`token expires in ${parseInt((diff * -1) / 60000)} minutes`);
+        return true;
+      } else {
+        console.log(`token expired ${parseInt(diff / 60000)} minutes ago`);
+        localStorage.removeItem('token');
+        setUser({
+          name: null,
+          canPost: false,
+          canPatch: false,
+          canDelete: false,
+        });
+      }
+    }
+    return false;
+  }
+  const getUser = (encodedJwt) => {
+    const decodedJwt = jwtDecode(encodedJwt);
+    const diff = Date.now() - (decodedJwt['exp'] * 1000);
+    if (diff < 0) {
+      console.log(`token expires in ${parseInt((diff * -1) / 60000)} minutes`);
+      return {
+        name: decodedJwt['username'],
+        canPost: decodedJwt['roles'].indexOf('medals-post') === -1 ? false : true,
+        canPatch: decodedJwt['roles'].indexOf('medals-patch') === -1 ? false : true,
+        canDelete: decodedJwt['roles'].indexOf('medals-delete') === -1 ? false : true,
+      };
+    } else {
+      console.log(`token expired ${parseInt(diff / 60000)} minutes ago`);
+      localStorage.removeItem('token');
+      return {
+          name: null,
+          canPost: false,
+          canPatch: false,
+          canDelete: false,
+        };
     }
   }
 
@@ -95,6 +222,11 @@ const App = () => {
       setCountries(fetchedCountries);
     }
     fetchData();
+    const encodedJwt = localStorage.getItem("token");
+    // check for existing token
+    if (encodedJwt) {
+      setUser(getUser(encodedJwt));
+    }
     // signalR
     const newConnection = new HubConnectionBuilder()
       .withUrl(hubEndpoint)
@@ -140,13 +272,22 @@ const App = () => {
   }, [connection]);
 
   return ( 
-    <div className="App">
+    <Router className="App">
       <header style= {{display: 'flex', alignItems: 'center', justifyContent: 'center' , flexWrap: 'wrap'}} className="App-header">
         <div>Olympic Medals</div>
         <Avatar sx={{ bgcolor: '#e2d02f', mx:2}}>{ getMedalCount("gold") }</Avatar>
         <Avatar sx={{ bgcolor: '#cacaca', mx:2}}>{ getMedalCount("silver") }</Avatar>
         <Avatar sx={{ bgcolor: '#a1671a', mx:2}}>{ getMedalCount("bronze") }</Avatar>
+        <span>Total: {getMedalCount("gold")+getMedalCount("silver")+getMedalCount("bronze")}</span>
+        {user.name ? 
+          <span className='logout'><a href="/" onClick={handleLogout} className='logoutLink'>Logout</a> [{user.name}]</span>
+          :
+          <Link to="/login" className='loginLink'>Login</Link>
+        }      
       </header>
+      <Route exact path="/login">
+        <Login onLogin={ handleLogin } />
+      </Route>
       <Container fixed={true}>
         <Grid spacing={1} justifyContent="center">
           {countries.map(country =>
@@ -154,24 +295,28 @@ const App = () => {
             <Country 
             key={ country.id }
             country={ country }
+            canPatch={ user.canPatch }
+            canDelete={ user.canDelete }
             onIncrement={ handleIncrement } 
             onDelete={ handleDelete } 
             onDecrement={ handleDecrement } />
           </Grid>)
           )}
         </Grid>
-        <NewCountry onAdd={handleAdd} />
+        { user.canPost && <NewCountry onAdd={ handleAdd } /> }
       </Container>
       {countries.map(country =>
         <CountryNoMui 
           key={ country.id } 
           country={ country }
+          canPatch={ user.canPatch }
+          canDelete={ user.canDelete }
           onIncrement={ handleIncrement } 
           onDelete={ handleDelete } 
           onDecrement={ handleDecrement } />
       )}
-      <NewCountryNoMui onAdd={ handleAdd } />
-    </div>
+      { user.canPost && <NewCountryNoMui onAdd={ handleAdd } /> }
+    </Router>
    );
 }
 

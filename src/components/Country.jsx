@@ -30,7 +30,7 @@ const theme = createTheme({
 });
 
 const Country = (props) => {
-    const { onDelete, onIncrement, onDecrement, country } = props;
+    const { onDelete, onIncrement, onDecrement, country, canPatch, canDelete } = props;
       return (
           <ThemeProvider theme={theme}>
               <Box className='Country' sx={{ width:300, mx:'auto' }}>
@@ -39,9 +39,9 @@ const Country = (props) => {
                     <ListItemText>
                       <Badge badgeContent={country.gold + country.silver + country.bronze} color="primary" bgcolor="ffffff">{ country.name }</Badge>
                     </ListItemText>
-                    <ListItemButton style={{ cursor:'pointer', display: 'inline', textAlign:'center' }} onClick={ () => onDelete(country.id)}>
+                    {canDelete &&<ListItemButton style={{ cursor:'pointer', display: 'inline', textAlign:'center' }} onClick={ () => onDelete(country.id)}>
                       <ListItemText primary="remove" />
-                    </ListItemButton>
+                    </ListItemButton>}
                   </ListItem>
                   <Divider />
                   <ListItem>
@@ -49,18 +49,21 @@ const Country = (props) => {
                     country={ country }
                     onIncrement={ onIncrement }
                     onDecrement={ onDecrement }
+                    canPatch={ canPatch }
                     theme={theme.palette.gold}
                     color={ "gold" } />
                     <Medal
                     country={ country }
                     onIncrement={ onIncrement }
                     onDecrement={ onDecrement }
+                    canPatch={ canPatch }
                     theme={theme.palette.silver}
                     color={ "silver" } />
                     <Medal
                     country={ country }
                     onIncrement={ onIncrement }
                     onDecrement={ onDecrement }
+                    canPatch={ canPatch }
                     theme={theme.palette.bronze}
                     color={ "bronze" } />
                   </ListItem>
