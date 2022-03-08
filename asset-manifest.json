@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/awsd-final-assignment-v2/static/css/main.c5cdaab2.css",
-    "main.js": "/awsd-final-assignment-v2/static/js/main.a4bbc41c.js",
-    "static/js/787.d44c210d.chunk.js": "/awsd-final-assignment-v2/static/js/787.d44c210d.chunk.js",
-    "index.html": "/awsd-final-assignment-v2/index.html",
-    "main.c5cdaab2.css.map": "/awsd-final-assignment-v2/static/css/main.c5cdaab2.css.map",
-    "main.a4bbc41c.js.map": "/awsd-final-assignment-v2/static/js/main.a4bbc41c.js.map",
-    "787.d44c210d.chunk.js.map": "/awsd-final-assignment-v2/static/js/787.d44c210d.chunk.js.map"
+    "main.css": "/Medals-Front-End/static/css/main.c5cdaab2.css",
+    "main.js": "/Medals-Front-End/static/js/main.d14d048b.js",
+    "static/js/787.d44c210d.chunk.js": "/Medals-Front-End/static/js/787.d44c210d.chunk.js",
+    "index.html": "/Medals-Front-End/index.html",
+    "main.c5cdaab2.css.map": "/Medals-Front-End/static/css/main.c5cdaab2.css.map",
+    "main.d14d048b.js.map": "/Medals-Front-End/static/js/main.d14d048b.js.map",
+    "787.d44c210d.chunk.js.map": "/Medals-Front-End/static/js/787.d44c210d.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.c5cdaab2.css",
-    "static/js/main.a4bbc41c.js"
+    "static/js/main.d14d048b.js"
   ]
 }
