@@ -3,7 +3,7 @@ import MedalNoMui from './MedalNoMui'
 
 
 const CountryNoMui = (props) => {
-  const { onDelete, onIncrement, onDecrement, country, onSave, onReset, colors } = props;
+  const { onDelete, onIncrement, onDecrement, country, onSave, onReset, colors, canDelete, canPatch } = props;
   const renderSaveButton = () => {
     let unsaved = false;
     colors.forEach(color => {
@@ -23,28 +23,22 @@ const CountryNoMui = (props) => {
   return (
           <div className='Country' style={{ margin: 'auto', display: 'block'}}>
             { country.name }: {getMedalCount()} <button onClick={() => onDelete(country.id)}>-</button><br/>
+            {colors.map(color => 
             <MedalNoMui
+            key={color}
             country={ country }
+            canPatch={ canPatch }
             onIncrement={ onIncrement }
             onDecrement={ onDecrement }
-            color={ colors[0] } />
-            <MedalNoMui
-            country={ country }
-            onIncrement={ onIncrement }
-            onDecrement={ onDecrement }
-            color={ colors[1] } />
-            <MedalNoMui
-            country={ country }
-            onIncrement={ onIncrement }
-            onDecrement={ onDecrement }
-            color={ colors[2] } />
+            color={ color } />
+            )}
             { renderSaveButton() ?
               <React.Fragment>
                 <button style={{marginLeft:'8px'}} onClick={ () => onSave(country.id) }>save</button>
                 <button style={{marginLeft:'8px'}} onClick={ () => onReset(country.id) }>reset</button>
               </React.Fragment>
               :
-              <button onClick={() => onDelete(country.id)}>delete</button>
+              canDelete && <button onClick={() => onDelete(country.id)}>delete</button>
             }
           </div>
   );

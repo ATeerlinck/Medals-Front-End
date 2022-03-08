@@ -7,7 +7,7 @@ import RemoveIcon from '@mui/icons-material/Remove';
 
  
  const Medal = (props) => {
-    const { onIncrement, onDecrement, country, color, theme } = props;
+    const { onIncrement, onDecrement, country, color, theme, canPatch } = props;
     return (
         <div>
             <Avatar sx={{ bgcolor: theme, mx:2}}>{ 
@@ -17,14 +17,14 @@ import RemoveIcon from '@mui/icons-material/Remove';
                 <span>{country[color].page_value}</span>
             }
             </Avatar>
-            <ButtonGroup variant="text" aria-label="text small button group">
+            { canPatch && <ButtonGroup variant="text" aria-label="text small button group">
                 <IconButton style={{ cursor:'pointer', display: 'inline' }} sx={{ m: 0, p:0, mx: 1}} onClick={ () => onIncrement(country.id, color) }>
                     <AddIcon color="primary" />    
-                </IconButton>  
-                <IconButton disabled={country[color].page_value <= 0 ? true : false} style={{ cursor:'pointer', display: 'inline' }} sx={{ m: 0, p:0, mx: 1}} onClick={ () => onDecrement(country.id, color) }>
-                    <RemoveIcon color="primary"/>
                 </IconButton>
-            </ButtonGroup>
+                <IconButton disabled={country[color].page_value <= 0 ? true : false} style={{ cursor:'pointer', display: 'inline' }} sx={{ m: 0, p:0, mx: 1}} onClick={ () => onDecrement(country.id, color) }>
+                    <RemoveIcon color={country[color].page_value <= 0 ? "secondary" : "primary"}/>
+                </IconButton>
+            </ButtonGroup> }
         </div>
     );
 }

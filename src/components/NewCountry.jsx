@@ -22,8 +22,8 @@ const NewCountry = (props) => {
         setOpen(false);
     }
     return (
-            <div>
-                <Button variant='outlined' onClick={handleOpen} sx={{ mb:1 , bgcolor: "#ffffff"}}>+</Button>
+            <div style={{maxWidth:64, width:"auto", margin:"auto"}}>
+                <Button variant='outlined'  onClick={handleOpen} sx={{ mb:1, mx:"auto" , bgcolor: "#ffffff"}}>+</Button>
                 <Dialog open={open} onClose={handleClose}>
                     <form onSubmit={ (e) => handleSubmit(e)}>
                     <DialogTitle>Add a Country</DialogTitle>

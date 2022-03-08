@@ -30,7 +30,7 @@ const theme = createTheme({
 });
 
 const Country = (props) => {
-    const { onDelete, onIncrement, onDecrement, country, onSave, onReset, colors } = props;
+    const { onDelete, onIncrement, onDecrement, country, onSave, onReset, colors, canDelete, canPatch } = props;
     const renderSaveButton = () => {
       let unsaved = false;
       colors.forEach(color => {
@@ -49,46 +49,39 @@ const Country = (props) => {
     }
       return (
           <ThemeProvider theme={theme}>
-              <Box className='Country' sx={{ width:300, mx:'auto' }}>
+              <Box className='Country' sx={{ width:250 , mx:'auto' }}>
                 <List>
                   <ListItem>
                     <ListItemText>
                       <Badge badgeContent={ getMedalCount() } color="primary" bgcolor="ffffff">{ country.name }</Badge>
                     </ListItemText>
-                    <ListItemButton style={{ cursor:'pointer', display: 'inline', textAlign:'center' }} onClick={ () => onDelete(country.id)}>
+                    {canDelete && <ListItemButton style={{ cursor:'pointer', display: 'inline', textAlign:'center' }} onClick={ () => onDelete(country.id)}>
                       <ListItemText primary="remove" />
-                    </ListItemButton>
+                    </ListItemButton> }
                   </ListItem>
                   <Divider />
                   <ListItem>
+                  {colors.map(color => 
                     <Medal
+                    key={color}
+                    color={ color }
                     country={ country }
+                    canPatch={ canPatch }
                     onIncrement={ onIncrement }
                     onDecrement={ onDecrement }
-                    theme={theme.palette.gold}
-                    color={ colors[0] } />
-                    <Medal
-                    country={ country }
-                    onIncrement={ onIncrement }
-                    onDecrement={ onDecrement }
-                    theme={theme.palette.silver}
-                    color={ colors[1] } />
-                    <Medal
-                    country={ country }
-                    onIncrement={ onIncrement }
-                    onDecrement={ onDecrement }
-                    theme={theme.palette.bronze}
-                    color={ colors[2] } />
-                  </ListItem>
+                    theme={theme.palette[color]}
+                     />
+                   )}
+                   </ListItem>
                   <Divider />
                   <ListItem>
                     { renderSaveButton() ?
                       <React.Fragment>
-                        <button style={{marginLeft:'8px'}} onClick={ () => onSave(country.id) }>save</button>
-                        <button style={{marginLeft:'8px'}} onClick={ () => onReset(country.id) }>reset</button>
+                        <Button style={{marginLeft:'8px'}} onClick={ () => onSave(country.id) }>save</Button>
+                        <Button style={{marginLeft:'8px'}} onClick={ () => onReset(country.id) }>reset</Button>
                       </React.Fragment>
                       :
-                      <button onClick={() => onDelete(country.id)}>delete</button>
+                      <Button onClick={() => onDelete(country.id)}>delete</Button>
                     }
                   </ListItem>
                 </List> 
