@@ -12,14 +12,24 @@ import { HubConnectionBuilder } from '@microsoft/signalr';
 
 const App = () => {
   const hubEndpoint = "https://localhost:5001/medalsHub"
-  const apiEndpoint = "https://medals-api.azurewebsites.net/api/country";
-  // const hubEndpoint = "https://medalsapi.azurewebsites.net/medalsHub"
+  const apiEndpoint = "https://medals-api.azurewebsites.net/jwt/api/country";
+  // const hubEndpoint = "https://medals-api.azurewebsites.net/medalsHub"
   const [ countries, setCountries ] = useState([]);
   const [ connection, setConnection] = useState(null);
   const colors = ["gold", "silver", "bronze"];
 
   const handleAdd = async (country) => {
-    await axios.post(apiEndpoint, { name: country });
+    try {
+      await axios.post(apiEndpoint, { name: country });
+    } catch (ex) {
+      if (ex.response && ex.response.status === 401) {
+        alert("You are not authorized to complete this request");
+      } else if (ex.response) {
+        console.log(ex.response);
+      } else {
+        console.log("Request failed");
+      }
+    }
   }
   const handleDelete = async (countryId) => {
     const OGcountries = countries;
@@ -31,39 +41,52 @@ const App = () => {
         // country already deleted
         console.log("The record does not exist - it may have already been deleted");
       } else { 
-        alert('An error occurred while deleting a country');
-        setCountries(OGcountries);
+        setCountries(originalCountries);
+        if (ex.response && ex.response.status === 401) {
+          alert("You are not authorized to complete this request");
+        } else if (ex.response) {
+          console.log(ex.response);
+        } else {
+          console.log("Request failed");
+        }
       }
     }
   }
   const handleSave = async (countryId) => {
-    const originalCountries = countries;
+    const originalCounts = {};
 
     const idx = countries.findIndex(c => c.id === countryId);
     const mutableCountries = [ ...countries ];
     const country = mutableCountries[idx];
     let jsonPatch = [];
     colors.forEach(color => {
+      originalCounts[color.name] = country[color.name].saved_value;
       if (country[color].page_value !== country[color].saved_value) {
         jsonPatch.push({ op: "replace", path: color, value: country[color].page_value });
         country[color].saved_value = country[color].page_value;
       }
     });
     console.log(`json patch for id: ${countryId}: ${JSON.stringify(jsonPatch)}`);
-    // update state
-    setCountries(mutableCountries);
 
     try {
       await axios.patch(`${apiEndpoint}/${countryId}`, jsonPatch);
     } catch (ex) {
+      colors.current.forEach(color => {
+        country[color.name].page_value = originalCounts[color.name];
+        country[color.name].saved_value = originalCounts[color.name];
+      });     
       if (ex.response && ex.response.status === 404) {
-        // country already deleted
-        console.log("The record does not exist - it may have already been deleted");
-      } else { 
-        alert('An error occurred while updating');
-        setCountries(originalCountries);
+        // country does not exist
+        console.log("The record does not exist - it may have been deleted");
+      } else if (ex.response && ex.response.status === 401) { 
+        alert('You are not authorized to complete this request');
+      } else if (ex.response) {
+        console.log(ex.response);
+      } else {
+        console.log("Request failed");
       }
     }
+    setCountries(mutableCountries);
   }
   const handleReset = (countryId) => {
     const idx = countries.findIndex(c => c.id === countryId);
