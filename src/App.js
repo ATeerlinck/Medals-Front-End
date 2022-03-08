@@ -20,6 +20,7 @@ const App = () => {
   const usersEndpoint = "https://medals-roles-api.azurewebsites.net/api/users/login";
   const [ countries, setCountries ] = useState([]);
   const [ connection, setConnection] = useState(null);
+  const colors = ["gold", "silver", "bronze"];
   const [ user, setUser ] = useState(
     {
       name: null,
@@ -275,9 +276,9 @@ const App = () => {
     <Router className="App">
       <header style= {{display: 'flex', alignItems: 'center', justifyContent: 'center' , flexWrap: 'wrap'}} className="App-header">
         <div>Olympic Medals</div>
-        <Avatar sx={{ bgcolor: '#e2d02f', mx:2}}>{ getMedalCount("gold") }</Avatar>
-        <Avatar sx={{ bgcolor: '#cacaca', mx:2}}>{ getMedalCount("silver") }</Avatar>
-        <Avatar sx={{ bgcolor: '#a1671a', mx:2}}>{ getMedalCount("bronze") }</Avatar>
+        <Avatar sx={{ bgcolor: '#e2d02f', mx:2}}>{ getAllMedalCount(colors[0]) }</Avatar>
+        <Avatar sx={{ bgcolor: '#cacaca', mx:2}}>{ getAllMedalCount(colors[1]) }</Avatar>
+        <Avatar sx={{ bgcolor: '#a1671a', mx:2}}>{ getAllMedalCount(colors[2]) }</Avatar>
         <span>Total: {getMedalCount("gold")+getMedalCount("silver")+getMedalCount("bronze")}</span>
         {user.name ? 
           <span className='logout'><a href="/" onClick={handleLogout} className='logoutLink'>Logout</a> [{user.name}]</span>
@@ -295,6 +296,7 @@ const App = () => {
             <Country 
             key={ country.id }
             country={ country }
+            colors={ colors }
             canPatch={ user.canPatch }
             canDelete={ user.canDelete }
             onIncrement={ handleIncrement } 
@@ -309,6 +311,7 @@ const App = () => {
         <CountryNoMui 
           key={ country.id } 
           country={ country }
+          colors={ colors }
           canPatch={ user.canPatch }
           canDelete={ user.canDelete }
           onIncrement={ handleIncrement } 

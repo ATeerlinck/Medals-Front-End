@@ -30,7 +30,7 @@ const theme = createTheme({
 });
 
 const Country = (props) => {
-    const { onDelete, onIncrement, onDecrement, country, canPatch, canDelete } = props;
+    const { onDelete, onIncrement, onDecrement, country, canPatch, canDelete, colors } = props;
       return (
           <ThemeProvider theme={theme}>
               <Box className='Country' sx={{ width:300, mx:'auto' }}>
@@ -44,29 +44,17 @@ const Country = (props) => {
                     </ListItemButton>}
                   </ListItem>
                   <Divider />
+                  { colors.map(color => 
                   <ListItem>
                     <Medal
                     country={ country }
                     onIncrement={ onIncrement }
                     onDecrement={ onDecrement }
                     canPatch={ canPatch }
-                    theme={theme.palette.gold}
-                    color={ "gold" } />
-                    <Medal
-                    country={ country }
-                    onIncrement={ onIncrement }
-                    onDecrement={ onDecrement }
-                    canPatch={ canPatch }
-                    theme={theme.palette.silver}
-                    color={ "silver" } />
-                    <Medal
-                    country={ country }
-                    onIncrement={ onIncrement }
-                    onDecrement={ onDecrement }
-                    canPatch={ canPatch }
-                    theme={theme.palette.bronze}
-                    color={ "bronze" } />
+                    theme={theme[palette][color]}
+                    color={ color } />
                   </ListItem>
+                  )}
                 </List> 
               </Box>
           </ThemeProvider>
