@@ -15,7 +15,7 @@ import jwtDecode from 'jwt-decode';
 
 const App = () => {
   const hubEndpoint = "https://medals-api.azurewebsites.net/medalsHub"
-  const apiEndpoint = "https://medals-api.azurewebsites.net/api/country";
+  const apiEndpoint = "https://medals-api.azurewebsites.net/jwt/api/country";
   const usersEndpoint = "https://medals-roles-api.azurewebsites.net/api/users/login";
   const [ countries, setCountries ] = useState([]);
   const [ connection, setConnection] = useState(null);
@@ -35,8 +35,20 @@ const App = () => {
   useEffect(() => {
     // initial data loaded here
     async function fetchCountries() {
-      const { data : fetchedCountries } = await axios.get(jwtApiEndPoint);
-      setCountries(fetchedCountries);
+      const { data : fetchedCountries } = await axios.get(apiEndpoint);
+      let newCountries = [];
+      fetchedCountries.forEach(country => {
+        let newCountry = {
+          id: country.id,
+          name: country.name,
+        };
+        colors.forEach(color => {
+          const count = country[color];
+          newCountry[color] = { page_value: count, saved_value: count };
+        });
+        newCountries.push(newCountry);
+      });
+      setCountries(newCountries);
     }
     fetchCountries();
 
@@ -54,6 +66,7 @@ const App = () => {
 
     setConnection(newConnection);
   }, []);
+
   // componentDidUpdate (changes to connection)
   useEffect(() => {
     if (connection) {
@@ -63,9 +76,17 @@ const App = () => {
 
         connection.on('ReceiveAddMessage', country => {
           console.log(`Add: ${country.name}`);
-          let mutableCountries = [...latestCountries.current];
-          mutableCountries = mutableCountries.concat(country);
 
+          let newCountry = { 
+            id: country.id, 
+            name: country.name,
+          };
+          colors.forEach(color => {
+            const count = country[color];
+            newCountry[color] = { page_value: count, saved_value: count };
+          });
+          let mutableCountries = [...latestCountries.current];
+          mutableCountries = mutableCountries.concat(newCountry);
           setCountries(mutableCountries);
         });
 
@@ -73,15 +94,22 @@ const App = () => {
           console.log(`Delete id: ${id}`);
           let mutableCountries = [...latestCountries.current];
           mutableCountries = mutableCountries.filter(c => c.id !== id);
-
           setCountries(mutableCountries);
         });
 
         connection.on('ReceivePatchMessage', country => {
           console.log(`Patch: ${country.name}`);
+          let updatedCountry = {
+            id: country.id,
+            name: country.name,
+          }
+          colors.forEach(color => {
+            const count = country[color];
+            updatedCountry[color] = { page_value: count, saved_value: count };
+          });
           let mutableCountries = [...latestCountries.current];
           const idx = mutableCountries.findIndex(c => c.id === country.id);
-          mutableCountries[idx] = country;
+          mutableCountries[idx] = updatedCountry;
 
           setCountries(mutableCountries);
         });

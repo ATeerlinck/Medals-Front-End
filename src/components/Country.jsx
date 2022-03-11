@@ -81,7 +81,7 @@ const Country = (props) => {
                         <Button style={{marginLeft:'8px'}} onClick={ () => onReset(country.id) }>reset</Button>
                       </React.Fragment>
                       :
-                      <Button onClick={() => onDelete(country.id)}>delete</Button>
+                      canDelete &&<Button onClick={() => onDelete(country.id)}>delete</Button>
                     }
                   </ListItem>
                 </List> 
