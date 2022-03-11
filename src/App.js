@@ -30,204 +30,24 @@ const App = () => {
     }
   );
 
-  const handleAdd = async (country) => {
-    // check for valid token based on token exp
-    if (isValidToken())
-    {
-      console.log('valid');
-      try {
-        await axios.post(jwtApiEndPoint, {
-          name: country
-        }, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-      } catch (ex) {
-        if (ex.response && ex.response.status === 401) {
-          // perhaps token has expired
-          alert("You are not authorized to complete this request");
-        } else if (ex.response) {
-          console.log(ex.response);
-        } else {
-          console.log("Request failed");
-        }
-      }
-    } else {
-      alert('Your token has expired');
-    }
-  }
-  const handleDelete = async (countryId) => {
-    // check for valid token based on token exp
-    if (isValidToken())
-    {
-      const originalCountries = countries;
-      setCountries(countries.filter(c => c.id !== countryId));
-      try {
-        await axios.delete(`${jwtApiEndPoint}/${countryId}`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-      } catch (ex) {
-        if (ex.response && ex.response.status === 404) {
-          // country already deleted
-          console.log("The record does not exist - it may have already been deleted");
-        } else { 
-          setCountries(originalCountries);
-          if (ex.response && ex.response.status === 401) {
-            // perhaps token has expired
-            alert("You are not authorized to complete this request");
-          } else if (ex.response) {
-            console.log(ex.response);
-          } else {
-            console.log("Request failed");
-          }
-        }
-      }
-    } else {
-      alert('Your token has expired');
-    }
-  }
-
-  const handleIncrement = (countryId, medalName) => handleUpdate(countryId, medalName, 1);
-  const handleDecrement = (countryId, medalName) =>  handleUpdate(countryId, medalName, -1)
-  const handleUpdate = async (countryId, medalName, factor) => {
-    // check for valid token based on token exp
-    if (isValidToken())
-    {
-      const idx = countries.findIndex(c => c.id === countryId);
-      const mutableCountries = [...countries ];
-      const originalCount = mutableCountries[idx][medalName];
-      mutableCountries[idx][medalName] += (1 * factor);
-      setCountries(mutableCountries);
-      const jsonPatch = [{ op: "replace", path: medalName, value: mutableCountries[idx][medalName] }];
-      console.log(`json patch for id: ${countryId}: ${JSON.stringify(jsonPatch)}`);
-
-      try {
-        await axios.patch(`${jwtApiEndPoint}/${countryId}`, jsonPatch, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-      } catch (ex) {
-        if (ex.response && ex.response.status === 404) {
-          // country does not exist
-          console.log("The record does not exist - it may have been deleted");
-        } else if (ex.response && ex.response.status === 401) { 
-          // perhaps token has expired
-          alert('You are not authorized to complete this request');
-          const revertCountries = [...countries];
-          revertCountries[idx][medalName] = originalCount;
-          setCountries(revertCountries);
-        } else if (ex.response) {
-          console.log(ex.response);
-        } else {
-          console.log("Request failed");
-        }
-      }
-    } else {
-      alert('Your token has expired');
-    }
-  }
-  const handleLogin = async (username, password) => {
-    try {
-      const resp = await axios.post(usersEndpoint, { username: username, password: password });
-      // save token to local storage
-      const encodedJwt = resp.data.token;
-      localStorage.setItem('token', encodedJwt);
-      setUser(getUser(encodedJwt));
-    } catch (ex) {
-      if (ex.response && (ex.response.status === 401 || ex.response.status === 400 )) {
-        alert("Login failed");
-      } else if (ex.response) {
-        console.log(ex.response);
-      } else {
-        console.log("Request failed");
-      }
-    }
-  }
-
-  const handleLogout = (e) => {
-    e.preventDefault();
-    console.log('logout');
-    localStorage.removeItem('token');
-    setUser({
-      name: null,
-      canPost: false,
-      canPatch: false,
-      canDelete: false
-    });
-    return false;
-  }
-  const isValidToken = () => {
-    const encodedJwt = localStorage.getItem("token");
-    // check for existing token
-    if (encodedJwt) {
-      const decodedJwt = jwtDecode(encodedJwt);
-      const diff = Date.now() - (decodedJwt['exp'] * 1000);
-      if (diff < 0) {
-        console.log(`token expires in ${parseInt((diff * -1) / 60000)} minutes`);
-        return true;
-      } else {
-        console.log(`token expired ${parseInt(diff / 60000)} minutes ago`);
-        localStorage.removeItem('token');
-        setUser({
-          name: null,
-          canPost: false,
-          canPatch: false,
-          canDelete: false,
-        });
-      }
-    }
-    return false;
-  }
-  const getUser = (encodedJwt) => {
-    const decodedJwt = jwtDecode(encodedJwt);
-    const diff = Date.now() - (decodedJwt['exp'] * 1000);
-    if (diff < 0) {
-      console.log(`token expires in ${parseInt((diff * -1) / 60000)} minutes`);
-      return {
-        name: decodedJwt['username'],
-        canPost: decodedJwt['roles'].indexOf('medals-post') === -1 ? false : true,
-        canPatch: decodedJwt['roles'].indexOf('medals-patch') === -1 ? false : true,
-        canDelete: decodedJwt['roles'].indexOf('medals-delete') === -1 ? false : true,
-      };
-    } else {
-      console.log(`token expired ${parseInt(diff / 60000)} minutes ago`);
-      localStorage.removeItem('token');
-      return {
-          name: null,
-          canPost: false,
-          canPatch: false,
-          canDelete: false,
-        };
-    }
-  }
-
-  const getMedalCount = (medal) =>{
-    let count = 0;
-    for(let i=0; i<countries.length; i++){
-      count+= countries[i][medal];
-    }
-    return count;
-  }
   const latestCountries = useRef(null);
   // latestCountries.current is a ref variable to countries
   // this is needed to access state variable in useEffect w/o dependency
   latestCountries.current = countries;
   useEffect(() => {
     // initial data loaded here
-    async function fetchData() {
-      const { data: fetchedCountries } = await axios.get(apiEndpoint);
+    async function fetchCountries() {
+      const { data : fetchedCountries } = await axios.get(apiEndpoint);
       setCountries(fetchedCountries);
     }
-    fetchData();
+    fetchCountries();
+
     const encodedJwt = localStorage.getItem("token");
     // check for existing token
     if (encodedJwt) {
       setUser(getUser(encodedJwt));
     }
+
     // signalR
     const newConnection = new HubConnectionBuilder()
       .withUrl(hubEndpoint)
@@ -236,7 +56,6 @@ const App = () => {
 
     setConnection(newConnection);
   }, []);
-
   // componentDidUpdate (changes to connection)
   useEffect(() => {
     if (connection) {
@@ -251,6 +70,7 @@ const App = () => {
 
           setCountries(mutableCountries);
         });
+
         connection.on('ReceiveDeleteMessage', id => {
           console.log(`Delete id: ${id}`);
           let mutableCountries = [...latestCountries.current];
@@ -258,6 +78,7 @@ const App = () => {
 
           setCountries(mutableCountries);
         });
+
         connection.on('ReceivePatchMessage', country => {
           console.log(`Patch: ${country.name}`);
           let mutableCountries = [...latestCountries.current];
@@ -271,6 +92,133 @@ const App = () => {
     }
   // useEffect is dependent on changes connection
   }, [connection]);
+
+  const handleAdd = async (name) => {
+    try {
+      await axios.post(apiEndpoint, {
+        name: name
+      }, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+    } catch (ex) {
+      if (ex.response && (ex.response.status === 401 || ex.response.status === 403)) {
+        alert("You are not authorized to complete this request");
+      } else if (ex.response) {
+        console.log(ex.response);
+      } else {
+        console.log("Request failed");
+      }
+    }
+  }
+
+  const handleDelete = async (countryId) => {
+    const originalCountries = countries;
+    setCountries(countries.filter(c => c.id !== countryId));
+    try {
+      await axios.delete(`${apiEndpoint}/${countryId}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+    } catch (ex) {
+      if (ex.response && ex.response.status === 404) {
+        // country already deleted
+        console.log("The record does not exist - it may have already been deleted");
+      } else { 
+        setCountries(originalCountries);
+        if (ex.response && (ex.response.status === 401 || ex.response.status === 403)) {
+          alert("You are not authorized to complete this request");
+        } else if (ex.response) {
+          console.log(ex.response);
+        } else {
+          console.log("Request failed");
+        }
+      }
+    }
+  }
+
+  const handleIncrement = (countryId, medalName) => handleUpdate(countryId, medalName, 1);
+  const handleDecrement = (countryId, medalName) =>  handleUpdate(countryId, medalName, -1)
+  const handleUpdate = async (countryId, medalName, factor) => {
+    const idx = countries.findIndex(c => c.id === countryId);
+    const mutableCountries = [...countries ];
+    mutableCountries[idx][medalName] += (1 * factor);
+    setCountries(mutableCountries);
+    const jsonPatch = [{ op: "replace", path: medalName, value: mutableCountries[idx][medalName] }];
+    console.log(`json patch for id: ${countryId}: ${JSON.stringify(jsonPatch)}`);
+
+    try {
+      await axios.patch(`${apiEndpoint}/${countryId}`, jsonPatch, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+    } catch (ex) {
+      if (ex.response && ex.response.status === 404) {
+        // country does not exist
+        console.log("The record does not exist - it may have been deleted");
+      } else if (ex.response && (ex.response.status === 401 || ex.response.status === 403)) { 
+        // in order to restore the defualt medal counts, we would need to save 
+        // the page value and saved value for each medal (like in the advanced example)
+        alert('You are not authorized to complete this request');
+        // to simplify, I am reloading the page instead
+        window.location.reload(false);
+      } else if (ex.response) {
+        console.log(ex.response);
+      } else {
+        console.log("Request failed");
+      }
+    }
+  }
+  const handleLogin = async (username, password) => {
+    try {
+      const resp = await axios.post(usersEndpoint, { username: username, password: password });
+      const encodedJwt = resp.data.token;
+      localStorage.setItem('token', encodedJwt);
+      setUser(getUser(encodedJwt));
+    } catch (ex) {
+      if (ex.response && (ex.response.status === 401 || ex.response.status === 400 )) {
+        alert("Login failed");
+      } else if (ex.response) {
+        console.log(ex.response);
+      } else {
+        console.log("Request failed");
+      }
+    }
+  }
+  const handleLogout = (e) => {
+    e.preventDefault();
+    console.log('logout');
+    localStorage.removeItem('token');
+    setUser({
+      name: null,
+      canPost: false,
+      canPatch: false,
+      canDelete: false
+    });
+    return false;
+  }
+  const getUser = (encodedJwt) => {
+    // return unencoded user / permissions
+    const decodedJwt = jwtDecode(encodedJwt);
+    return {
+      name: decodedJwt['username'],
+      canPost: decodedJwt['roles'].indexOf('medals-post') === -1 ? false : true,
+      canPatch: decodedJwt['roles'].indexOf('medals-patch') === -1 ? false : true,
+      canDelete: decodedJwt['roles'].indexOf('medals-delete') === -1 ? false : true,
+    };
+  }
+
+  const getMedalCount = (medal) =>{
+    let count = 0;
+    for(let i=0; i<countries.length; i++){
+      count+= countries[i][medal];
+    }
+    return count;
+  }
+  
 
   return ( 
     <Router className="App">

@@ -1,13 +1,11 @@
-import React, {useState} from 'react';
+import React, {useState}  from 'react';
 import { useHistory } from "react-router-dom";
-// import axios from 'axios';
 
 function Login(props) {
   const { onLogin } = props;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const history = useHistory();
-
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log('Submit');
@@ -17,6 +15,7 @@ function Login(props) {
   const handleCancel = () => {
     history.push("/");
   }
+
   return (
     <form className='loginForm' onSubmit={(e) => handleSubmit(e)}>
       <p>

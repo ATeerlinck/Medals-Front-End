@@ -38,6 +38,10 @@ padding: 1em;
   left: 8px;
 }
 
+.logoutLink {
+  color: #fff;
+}
+
 .loginForm {
   border: 1px solid #999;
   background-color: #dedede;
@@ -47,8 +51,4 @@ padding: 1em;
   width: 300px;
   top: 65px;
   left: 8px;
-}
-
-.logoutLink {
-  color: #fff;
 }
