@@ -34,23 +34,12 @@ const App = () => {
   latestCountries.current = countries;
   useEffect(() => {
     // initial data loaded here
-    async function fetchData() {
-      const { data: fetchedCountries } = await axios.get(apiEndpoint);
-      let newCountries = [];
-      fetchedCountries.forEach(country => {
-        let newCountry = {
-          id: country.id,
-          name: country.name,
-        };
-        colors.forEach(color => {
-          const count = country[color];
-          newCountry[color] = { page_value: count, saved_value: count };
-        });
-        newCountries.push(newCountry);
-      });
-      setCountries(newCountries);
+    async function fetchCountries() {
+      const { data : fetchedCountries } = await axios.get(jwtApiEndPoint);
+      setCountries(fetchedCountries);
     }
-    fetchData();
+    fetchCountries();
+
     const encodedJwt = localStorage.getItem("token");
     // check for existing token
     if (encodedJwt) {
@@ -65,7 +54,6 @@ const App = () => {
 
     setConnection(newConnection);
   }, []);
-
   // componentDidUpdate (changes to connection)
   useEffect(() => {
     if (connection) {
@@ -75,17 +63,9 @@ const App = () => {
 
         connection.on('ReceiveAddMessage', country => {
           console.log(`Add: ${country.name}`);
-
-          let newCountry = { 
-            id: country.id, 
-            name: country.name,
-          };
-          colors.current.forEach(color => {
-            const count = country[color];
-            newCountry[color] = { page_value: count, saved_value: count };
-          });
           let mutableCountries = [...latestCountries.current];
-          mutableCountries = mutableCountries.concat(newCountry);
+          mutableCountries = mutableCountries.concat(country);
+
           setCountries(mutableCountries);
         });
 
@@ -93,22 +73,15 @@ const App = () => {
           console.log(`Delete id: ${id}`);
           let mutableCountries = [...latestCountries.current];
           mutableCountries = mutableCountries.filter(c => c.id !== id);
+
           setCountries(mutableCountries);
         });
 
         connection.on('ReceivePatchMessage', country => {
           console.log(`Patch: ${country.name}`);
-          let updatedCountry = {
-            id: country.id,
-            name: country.name,
-          }
-          colors.current.forEach(color => {
-            const count = country[color];
-            updatedCountry[color] = { page_value: count, saved_value: count };
-          });
           let mutableCountries = [...latestCountries.current];
           const idx = mutableCountries.findIndex(c => c.id === country.id);
-          mutableCountries[idx] = updatedCountry;
+          mutableCountries[idx] = country;
 
           setCountries(mutableCountries);
         });
